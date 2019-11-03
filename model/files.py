@@ -9,7 +9,7 @@ from botocore.exceptions import ClientError
 import hashlib
 import urllib.request
 
-hostName = 'http://iiif-fixtures.s3-website-us-east-1.amazonaws.com'
+hostName = 'https://fixtures.iiif.io'
 
 def shorternFilename(filepath):
     if filepath.startswith('/'):
