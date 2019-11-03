@@ -98,17 +98,21 @@ def generateFilelist():
                     leaf = dirEl[pathElement]    
                     dirEl = dirEl[pathElement]
             if not s3fileinfo.key.endswith('/'):
-                if s3fileinfo.key.startswith('video/'):
-                    fileJson = json.loads(MediaInfo.parse('{}/{}'.format(hostName,s3fileinfo.key)).to_json())
-                    leaf['metadata'] = { 'mediainfo': fileJson }
-                elif s3fileinfo.key.startswith('audio/') and not s3fileinfo.key.endswith('.json'):
-                    fileJson = json.loads(MediaInfo.parse('{}/{}'.format(hostName,s3fileinfo.key)).to_json())
-                    leaf['metadata'] = { 'mediainfo': fileJson }
-                elif s3fileinfo.key.startswith('images/') and not s3fileinfo.key.endswith('.json'):
-                    leaf['metadata'] = {}
-                else:
-                    print ('Failed to recognise type for {}'.format(s3fileinfo.key))
-                addMetadataFile(s3client, s3fileinfo.key, leaf)
+                try: 
+                    if s3fileinfo.key.startswith('video/'):
+                        fileJson = json.loads(MediaInfo.parse('{}/{}'.format(hostName,s3fileinfo.key)).to_json())
+                        leaf['metadata'] = { 'mediainfo': fileJson }
+                    elif s3fileinfo.key.startswith('audio/') and not s3fileinfo.key.endswith('.json'):
+                        fileJson = json.loads(MediaInfo.parse('{}/{}'.format(hostName,s3fileinfo.key)).to_json())
+                        leaf['metadata'] = { 'mediainfo': fileJson }
+                    elif s3fileinfo.key.startswith('images/') and not s3fileinfo.key.endswith('.json'):
+                        leaf['metadata'] = {}
+                    else:
+                        print ('Failed to recognise type for {}'.format(s3fileinfo.key))
+                    addMetadataFile(s3client, s3fileinfo.key, leaf)
+                except OSError as configError:
+                    print('Failed to analysis file due to a problem with the setup of mediainfo:')
+                    print(configError)
             
     return filesystem
 
