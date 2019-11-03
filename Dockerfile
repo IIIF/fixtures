@@ -1,6 +1,6 @@
 FROM srittau/wsgi-base:latest
 
-RUN apt-get install mediainfo
+RUN apt-get -y install mediainfo
 WORKDIR /app/pylibs
 COPY requirements.txt ./
 RUN /app/virtualenv/bin/pip install  -r requirements.txt
