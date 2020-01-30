@@ -26,9 +26,13 @@
                 </video>
             </div>
         % else:
+            % url = fileInfo['url']
+            % if 'info.json' in fileInfo:
+            %   url += '/full/!500,500/0/default.jpg'
+            % end
             <div width="100%" align="center">
                 <div width="500px" height="500px">
-                    <img src="{{ fileInfo['url'] }}/full/!500,500/0/default.jpg" style="border:1px solid black;"/>
+                    <img src="{{ url }}" style="border:1px solid black;"/>
                 </div>
             </div>
         % end 
@@ -45,9 +49,13 @@
                 <td><b>URL: </b></td><td><a href="{{ fileInfo['url'] }}">{{ fileInfo['url'] }}</a></td>
             </tr>    
             % for key in fileInfo.keys():
-            %   if key not in ('name','url','path', 'General', 'Video', 'Audio', 'type', 'info.json'):
+            %   if key not in ('name','url','path', 'General', 'Video', 'Audio', 'type', 'info.json', 'Image', 'image_url'):
                     <tr>
                         <td><b>{{ key }}: </b></td><td>{{ fileInfo[key] }}</a></td>
+                    </tr>    
+                % elif key == 'image_url' and 'info.json' in fileInfo:    
+                    <tr>
+                        <td><b>Source Image URL: </b></td><td><a href="{{ fileInfo[key] }}">{{ fileInfo[key] }}</a></td>
                     </tr>    
                 % end    
             % end    
@@ -72,7 +80,19 @@
         <p>The data below gives extra information on this resource and can be copied and pasted into a IIIF Manifest.</p>
         <%
             if contentType == 'Image':
-                infoJson = fileInfo['info.json']
+                if 'info.json' in fileInfo:
+                    infoJson = fileInfo['info.json']
+                else:
+                    # straight image
+                    print (json.dumps(fileInfo, indent=4))
+                    infoJson = {
+                        "id": fileInfo['url'],
+                        "type": "Image",
+                        "format": fileInfo['General']['internet_media_type'],
+                        "height": fileInfo['Image']['height'],
+                        "width": fileInfo['Image']['width']
+                    }
+                end    
             else:
                 infoJson = {
                     'id': fileInfo['url'],

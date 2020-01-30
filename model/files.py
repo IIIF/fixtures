@@ -8,6 +8,7 @@ from pymediainfo import MediaInfo
 from botocore.exceptions import ClientError
 import hashlib
 import urllib.request
+from urllib.error import HTTPError
 
 hostName = 'https://fixtures.iiif.io'
 
@@ -49,9 +50,14 @@ def getFileInfo(filepath):
         fileInfo['type'] = 'Audio'
     else:
         fileInfo['type'] = 'Image'
-        fileInfo['url'] = 'https://iiif.io/api/image/3.0/example/reference/{}'.format(shorternFilename(fileInfo['path']))
-        with urllib.request.urlopen("{}/info.json".format(fileInfo['url'])) as url:
-            fileInfo['info.json'] = json.loads(url.read().decode())
+        fileInfo['image_url'] = '{}{}'.format(hostName,filepath)
+        try:
+            fileInfo['url'] = 'https://iiif.io/api/image/3.0/example/reference/{}'.format(shorternFilename(fileInfo['path']))
+            with urllib.request.urlopen("{}/info.json".format(fileInfo['url'])) as url:
+                fileInfo['info.json'] = json.loads(url.read().decode())
+        except HTTPError as error:
+            print ('Failed to get info.json at {}. Treat as flat image'.format(fileInfo['url']))
+            fileInfo['url'] = '{}{}'.format(hostName,filepath)
             
     return fileInfo
 

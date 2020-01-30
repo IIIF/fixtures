@@ -5,7 +5,7 @@ WORKDIR /app/pylibs
 COPY requirements.txt ./
 RUN /app/virtualenv/bin/pip install  -r requirements.txt
 RUN mkdir /app/www-data
-RUN a2enmod proxy proxy_http proxy_http2
+RUN a2enmod proxy proxy_http proxy_http2 rewrite
 RUN chmod 777 .
 
 COPY . .
