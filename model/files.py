@@ -43,7 +43,6 @@ def getFileInfo(filepath):
                 simplifiedData[track['track_type']] = track
             fileInfo.update(simplifiedData)
 
-    print (json.dumps(fileInfo, indent=4))
     if 'Video' in fileInfo:
         fileInfo['type'] = 'Video'
     elif 'Audio' in fileInfo:
@@ -70,31 +69,43 @@ def getFileList(refresh=False):
             json_data.close()
     else:
         files = generateFilelist()
+        print (os.path.realpath(cachefile))
         with open(cachefile, 'w') as json_data:
             json.dump(files, json_data)
     return files        
 
-def addMetadataFile(s3client, filename, json_data):    
+def getMetadataFile(s3client, directory):    
+    metadata = {} 
+    filename = '{}/metadata.json'.format(directory)
     try:
-        content_object = s3client.Object('iiif-fixtures', '{}/{}'.format(os.path.dirname(filename), 'metadata.json'))
+        content_object = s3client.Object('iiif-fixtures', filename)
         file_content = content_object.get()['Body'].read().decode('utf-8')
         metadata = json.loads(file_content)
-        print ('Data')
-        print (metadata)
-        json_data['metadata'].update(metadata)
     except ClientError as no_metadata_error:
         print ('No metadata file for {}'.format(filename))
 
+    return metadata
 
-def generateFilelist():
-    s3client = AWS().s3()
+def saveMetadata(directory, metadata):
+    metadataFilename = '{}/{}'.format(directory, 'metadata.json')
+    print ('Updating: {}'.format(metadataFilename))
+    test=False
+    if not test:
+        s3cli = AWS().client('s3',region='us-east-1')
+        s3cli.put_object(ACL='private', Body=json.dumps(metadata).encode('utf-8'), Bucket='iiif-fixtures', Key=metadataFilename, ContentType='application/json', ContentDisposition='inline')    
 
-    bucketcontents = s3client.Bucket('iiif-fixtures').objects.all()
+def processDir(s3client, directory, files, unittest=False, metadataCache=None):
+    if metadataCache:
+        metadata = metadataCache
+    else:    
+        metadata = getMetadataFile(s3client, directory)
+    metadataChange=False
     filesystem = {}
-    for s3fileinfo in bucketcontents:
-        if not s3fileinfo.key.endswith('/metadata.json'):
-            path = s3fileinfo.key.split('/')
-            print (s3fileinfo.key)
+    for filename in files:
+        s3fileinfo = files[filename]    
+        fullpath = "{}/{}".format(directory, filename)
+        if not filename.endswith('metadata.json'):
+            path = fullpath.split('/')
             dirEl = filesystem
             leaf = {}
             for pathElement in path:
@@ -103,22 +114,57 @@ def generateFilelist():
                         dirEl[pathElement] = {}
                     leaf = dirEl[pathElement]    
                     dirEl = dirEl[pathElement]
-            if not s3fileinfo.key.endswith('/'):
-                try: 
-                    if s3fileinfo.key.startswith('video/'):
-                        fileJson = json.loads(MediaInfo.parse('{}/{}'.format(hostName,s3fileinfo.key)).to_json())
-                        leaf['metadata'] = { 'mediainfo': fileJson }
-                    elif s3fileinfo.key.startswith('audio/') and not s3fileinfo.key.endswith('.json'):
-                        fileJson = json.loads(MediaInfo.parse('{}/{}'.format(hostName,s3fileinfo.key)).to_json())
-                        leaf['metadata'] = { 'mediainfo': fileJson }
-                    elif s3fileinfo.key.startswith('images/') and not s3fileinfo.key.endswith('.json'):
-                        leaf['metadata'] = {}
-                    else:
-                        print ('Failed to recognise type for {}'.format(s3fileinfo.key))
-                    addMetadataFile(s3client, s3fileinfo.key, leaf)
-                except OSError as configError:
-                    print('Failed to analysis file due to a problem with the setup of mediainfo:')
-                    print(configError)
-            
-    return filesystem
 
+            try: 
+                if fullpath in metadata and 'metadata' in metadata[fullpath]:
+                    leaf['metadata'] = metadata[fullpath]['metadata']
+                else:    
+                    if (directory.startswith('video/') or directory.startswith('audio/')):
+                        fileJson = json.loads(MediaInfo.parse('{}/{}'.format(hostName,fullpath)).to_json())
+                        leaf['metadata'] = { 'mediainfo': fileJson }
+
+                        metadata[fullpath] = { 'metadata': leaf['metadata'] }
+                        metadataChange=True
+                
+            except OSError as configError:
+                print('Failed to analysis file due to a problem with the setup of mediainfo:')
+                print(configError)
+    if not unittest and metadataChange:
+        # save metadata to s3 
+        saveMetadata(directory, metadata)
+            
+    if unittest:
+        return (metadataChange, metadata)
+    else:
+        return filesystem
+
+def recursiveMergeDicts(sourceDict, newDict):
+    for key in newDict:
+        if key not in sourceDict:
+            sourceDict[key] = newDict[key]
+        else:
+            recursiveMergeDicts(sourceDict[key], newDict[key])
+
+
+def generateFilelist():
+    s3client = AWS().s3()
+
+    bucketcontents = s3client.Bucket('iiif-fixtures').objects.all()
+    filesystem = {}
+    # turn in to a dict of files and folders
+    filesDict = {}
+    for s3fileinfo in bucketcontents:
+        if os.path.basename(s3fileinfo.key):
+            directory = os.path.dirname(s3fileinfo.key)
+            if directory not in filesDict:
+                filesDict[directory] = {}
+
+            filesDict[directory][os.path.basename(s3fileinfo.key)] = s3fileinfo    
+
+    metadata = {}
+    for dirName in filesDict:        
+        dirInfo = processDir(s3client, dirName, filesDict[dirName])
+        recursiveMergeDicts(metadata, dirInfo)
+            
+    return metadata
+        

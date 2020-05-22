@@ -49,7 +49,7 @@
                 <td><b>URL: </b></td><td><a href="{{ fileInfo['url'] }}">{{ fileInfo['url'] }}</a></td>
             </tr>    
             % for key in fileInfo.keys():
-            %   if key not in ('name','url','path', 'General', 'Video', 'Audio', 'type', 'info.json', 'Image', 'image_url'):
+            %   if key not in ('name','url','path', 'General', 'Video', 'Audio', 'type', 'info.json', 'Image', 'Text', 'image_url'):
                     <tr>
                         <td><b>{{ key }}: </b></td><td>{{ fileInfo[key] }}</a></td>
                     </tr>    
@@ -83,15 +83,24 @@
                 if 'info.json' in fileInfo:
                     infoJson = fileInfo['info.json']
                 else:
-                    # straight image
-                    print (json.dumps(fileInfo, indent=4))
-                    infoJson = {
-                        "id": fileInfo['url'],
-                        "type": "Image",
-                        "format": fileInfo['General']['internet_media_type'],
-                        "height": fileInfo['Image']['height'],
-                        "width": fileInfo['Image']['width']
-                    }
+                    if fileInfo['name'].endswith('.vtt'):
+                        # vtt for some reason gets assigned as a image
+                        infoJson = {
+                            "id": fileInfo['url'],
+                            "type": "Text",
+                            "format": 'text/vtt'
+                        }
+                    else:    
+                        # straight image
+                        print (json.dumps(fileInfo, indent=4))
+                        infoJson = {
+                            "id": fileInfo['url'],
+                            "type": "Image",
+                            "format": fileInfo['General']['internet_media_type'],
+                            "height": fileInfo['Image']['height'],
+                            "width": fileInfo['Image']['width']
+                        }
+                    end
                 end    
             else:
                 infoJson = {
