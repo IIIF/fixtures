@@ -48,8 +48,9 @@
             <tr>
                 <td><b>URL: </b></td><td><a href="{{ fileInfo['url'] }}">{{ fileInfo['url'] }}</a></td>
             </tr>    
+
             % for key in fileInfo.keys():
-            %   if key not in ('name','url','path', 'General', 'Video', 'Audio', 'type', 'info.json', 'Image', 'Text', 'image_url'):
+            %   if key not in ('name','url','path', 'General', 'Video', 'Audio', 'type', 'info.json', 'Image', 'Text', 'image_url', 'metadata'):
                     <tr>
                         <td><b>{{ key }}: </b></td><td>{{ fileInfo[key] }}</a></td>
                     </tr>    
@@ -76,6 +77,16 @@
                 % end    
             % end    
         </table>
+        % if 'metadata' in fileInfo and fileInfo['metadata']:
+            <h3>Metadata</h3>
+            <table>
+                % for key in fileInfo['metadata']:
+                    <tr>
+                        <td><b>{{ key[0].upper() + key[1:] }}: </b></td><td>{{ fileInfo['metadata'][key] }}</td>
+                    </tr>
+                % end    
+            </table>
+        % end    
         <h3>JSON Resource details</h3>
         <p>The data below gives extra information on this resource and can be copied and pasted into a IIIF Manifest.</p>
         <%
