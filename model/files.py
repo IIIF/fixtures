@@ -33,9 +33,10 @@ def getFileInfo(filepath):
             data = data[filePart]
     # turn media info tracks into dict
     if 'metadata' in data:
+        fileInfo['metadata'] = {}
         for key in data['metadata'].keys():
             if key != 'mediainfo':
-                fileInfo[key] = data['metadata'][key]
+                fileInfo['metadata'][key] = data['metadata'][key]
                 
         if 'mediainfo' in data['metadata'] and 'tracks' in data['metadata']['mediainfo']:
             simplifiedData = {}
