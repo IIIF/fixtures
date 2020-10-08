@@ -77,15 +77,20 @@
                 % end    
             % end    
         </table>
-        % if 'metadata' in fileInfo and fileInfo['metadata']:
+        % if 'metadata' in fileInfo and fileInfo['metadata'] and 'description' in fileInfo['metadata']:
             <h3>Metadata</h3>
-            <table>
-                % for key in fileInfo['metadata']:
-                    <tr>
-                        <td><b>{{ key[0].upper() + key[1:] }}: </b></td><td>{{ fileInfo['metadata'][key] }}</td>
-                    </tr>
+            <ul>
+                % for key in fileInfo['metadata']['description']:
+                    <li>
+                        <b>{{ key[0].upper() + key[1:] }}:</b> 
+                        % if fileInfo['metadata']['description'][key].startswith('http'):
+                            <a href="{{ fileInfo['metadata']['description'][key] }}">{{ fileInfo['metadata']['description'][key] }}</a>
+                        % else:
+                            {{ fileInfo['metadata']['description'][key] }}
+                        % end
+                    </li>
                 % end    
-            </table>
+            </ul>
         % end    
         <h3>JSON Resource details</h3>
         <p>The data below gives extra information on this resource and can be copied and pasted into a IIIF Manifest.</p>

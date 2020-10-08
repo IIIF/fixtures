@@ -118,14 +118,21 @@ def processDir(s3client, directory, files, unittest=False, metadataCache=None):
 
             try: 
                 if fullpath in metadata and 'metadata' in metadata[fullpath]:
-                    leaf['metadata'] = metadata[fullpath]['metadata']
-                else:    
-                    if (directory.startswith('video/') or directory.startswith('audio/')):
-                        fileJson = json.loads(MediaInfo.parse('{}/{}'.format(hostName,fullpath)).to_json())
-                        leaf['metadata'] = { 'mediainfo': fileJson }
+                    leaf['metadata'] = {}
+                    for key in  metadata[fullpath]['metadata']:
+                        leaf['metadata'][key] = metadata[fullpath]['metadata'][key]
+                if (directory.startswith('video/') or directory.startswith('audio/')) and not 'mediainfo' in leaf['metadata']:
+                    print ('Media info not found so adding')
+                    fileJson = json.loads(MediaInfo.parse('{}/{}'.format(hostName,fullpath)).to_json())
+                    leaf['metadata'] = { 'mediainfo': fileJson }
 
-                        metadata[fullpath] = { 'metadata': leaf['metadata'] }
-                        metadataChange=True
+                    if fullpath not in metadata:
+                        metadata[fullpath] = {}
+                    if 'metadata' not in metadata[fullpath]:
+                        metadata[fullpath]['metadata'] = {}
+
+                    metadata[fullpath]['metadata']['mediainfo'] =  fileJson
+                    metadataChange=True
                 
             except OSError as configError:
                 print('Failed to analysis file due to a problem with the setup of mediainfo:')
