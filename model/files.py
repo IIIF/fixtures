@@ -48,6 +48,8 @@ def getFileInfo(filepath):
         fileInfo['type'] = 'Video'
     elif 'Audio' in fileInfo:
         fileInfo['type'] = 'Audio'
+    elif fileInfo['path'].startswith('/other'):    
+        fileInfo['type'] = 'Other'
     else:
         fileInfo['type'] = 'Image'
         fileInfo['image_url'] = '{}{}'.format(hostName,filepath)

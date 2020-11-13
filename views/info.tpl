@@ -25,7 +25,7 @@
                     Your browser does not support the video tag.
                 </video>
             </div>
-        % else:
+        % elif contentType == 'Image' and not fileInfo['name'].endswith('.vtt'):
             % url = fileInfo['url']
             % if 'info.json' in fileInfo:
             %   url += '/full/!500,500/0/default.jpg'
@@ -92,51 +92,53 @@
                 % end    
             </ul>
         % end    
-        <h3>JSON Resource details</h3>
-        <p>The data below gives extra information on this resource and can be copied and pasted into a IIIF Manifest.</p>
-        <%
-            if contentType == 'Image':
-                if 'info.json' in fileInfo:
-                    infoJson = fileInfo['info.json']
+        % if contentType != 'Other':
+            <h3>JSON Resource details</h3>
+            <p>The data below gives extra information on this resource and can be copied and pasted into a IIIF Manifest.</p>
+            <%
+                if contentType == 'Image':
+                    if 'info.json' in fileInfo:
+                        infoJson = fileInfo['info.json']
+                    else:
+                        if fileInfo['name'].endswith('.vtt'):
+                            # vtt for some reason gets assigned as a image
+                            infoJson = {
+                                "id": fileInfo['url'],
+                                "type": "Text",
+                                "format": 'text/vtt'
+                            }
+                        else:    
+                            # straight image
+                            print (json.dumps(fileInfo, indent=4))
+                            infoJson = {
+                                "id": fileInfo['url'],
+                                "type": "Image",
+                                "format": fileInfo['General']['internet_media_type'],
+                                "height": fileInfo['Image']['height'],
+                                "width": fileInfo['Image']['width']
+                            }
+                        end
+                    end    
                 else:
-                    if fileInfo['name'].endswith('.vtt'):
-                        # vtt for some reason gets assigned as a image
-                        infoJson = {
-                            "id": fileInfo['url'],
-                            "type": "Text",
-                            "format": 'text/vtt'
-                        }
-                    else:    
-                        # straight image
-                        print (json.dumps(fileInfo, indent=4))
-                        infoJson = {
-                            "id": fileInfo['url'],
-                            "type": "Image",
-                            "format": fileInfo['General']['internet_media_type'],
-                            "height": fileInfo['Image']['height'],
-                            "width": fileInfo['Image']['width']
-                        }
-                    end
-                end    
-            else:
-                infoJson = {
-                    'id': fileInfo['url'],
-                    'type': contentType
-                }
+                    infoJson = {
+                        'id': fileInfo['url'],
+                        'type': contentType
+                    }
 
-                if contentType == 'Video':
-                    infoJson['height'] = fileInfo['Video']['height']
-                    infoJson['width'] = fileInfo['Video']['width']
-                end    
-                if 'General' in fileInfo:
-                    infoJson['duration'] = fileInfo['General']['duration'] / 1000
-                    infoJson['format'] = fileInfo['General']['internet_media_type']
+                    if contentType == 'Video':
+                        infoJson['height'] = fileInfo['Video']['height']
+                        infoJson['width'] = fileInfo['Video']['width']
+                    end    
+                    if 'General' in fileInfo:
+                        infoJson['duration'] = fileInfo['General']['duration'] / 1000
+                        infoJson['format'] = fileInfo['General']['internet_media_type']
+                    end
                 end
-            end
-        %>
-        <pre>
+            %>
+            <pre>
 {{ json.dumps(infoJson, indent=4) }}
-        </pre>
+            </pre>
+        % end    
     </div>
 </div>
 <% include('views/footer.tpl') %>
