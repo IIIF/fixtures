@@ -123,7 +123,7 @@ def processDir(s3client, directory, files, unittest=False, metadataCache=None):
                     leaf['metadata'] = {}
                     for key in  metadata[fullpath]['metadata']:
                         leaf['metadata'][key] = metadata[fullpath]['metadata'][key]
-                if (directory.startswith('video/') or directory.startswith('audio/')) and not 'mediainfo' in leaf['metadata']:
+                if (directory.startswith('video/') or directory.startswith('audio/')) and ('metadata' not in leaf or 'mediainfo' not in leaf['metadata']):
                     print ('Media info not found so adding')
                     fileJson = json.loads(MediaInfo.parse('{}/{}'.format(hostName,fullpath)).to_json())
                     leaf['metadata'] = { 'mediainfo': fileJson }
