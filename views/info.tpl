@@ -25,7 +25,7 @@
                     Your browser does not support the video tag.
                 </video>
             </div>
-        % elif contentType == 'Image' and not fileInfo['name'].endswith('.vtt'):
+        % elif contentType == 'Image' and not (fileInfo['name'].endswith('.vtt') or fileInfo['name'].endswith('.txt')):
             % url = fileInfo['url']
             % if 'info.json' in fileInfo:
             %   url += '/full/!500,500/0/default.jpg'
@@ -106,6 +106,12 @@
                                 "id": fileInfo['url'],
                                 "type": "Text",
                                 "format": 'text/vtt'
+                            }
+                        elif fileInfo['name'].endswith('.txt'):    
+                            infoJson = {
+                                "id": fileInfo['url'],
+                                "type": "Text",
+                                "format": 'text/plain'
                             }
                         else:    
                             # straight image
