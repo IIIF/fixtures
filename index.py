@@ -28,6 +28,12 @@ def css(filepath):
     print ('looking for {}'.format(filepath))
     return static_file(filepath, root='./css')
 
+@route('/img/<filepath:path>')
+def css(filepath):
+    print ('looking for {}'.format(filepath))
+    return static_file(filepath, root='./img')
+
+
 @route('/favicon.ico')
 def favicon():
     return static_file('favicon.ico', root='./img')
