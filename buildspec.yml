@@ -2,8 +2,8 @@ version: 0.2
 
 env:
   secrets-manager:
-    DOCKERHUB_USER: "dockerhub/creds:username"
-    DOCKERHUB_TOKEN: "dockerhub/creds:token"
+    DOCKERHUB_USER: "dockerhub/username"
+    DOCKERHUB_TOKEN: "dockerhub/token"
 
 phases:
   pre_build:
