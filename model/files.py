@@ -44,10 +44,13 @@ def getFileInfo(filepath):
                 simplifiedData[track['track_type']] = track
             fileInfo.update(simplifiedData)
 
+    print (fileInfo['path'])
     if 'Video' in fileInfo:
         fileInfo['type'] = 'Video'
     elif 'Audio' in fileInfo:
         fileInfo['type'] = 'Audio'
+    elif fileInfo['path'].startswith('/3d'):    
+        fileInfo['type'] = '3D'
     elif fileInfo['path'].startswith('/other'):    
         fileInfo['type'] = 'Other'
     else:
@@ -92,7 +95,7 @@ def getMetadataFile(s3client, directory):
 def saveMetadata(directory, metadata):
     metadataFilename = '{}/{}'.format(directory, 'metadata.json')
     print ('Updating: {}'.format(metadataFilename))
-    test=False
+    test=True
     if not test:
         s3cli = AWS().client('s3',region='us-east-1')
         s3cli.put_object(ACL='private', Body=json.dumps(metadata).encode('utf-8'), Bucket='iiif-fixtures', Key=metadataFilename, ContentType='application/json', ContentDisposition='inline')    

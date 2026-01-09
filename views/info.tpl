@@ -9,6 +9,7 @@
 <div class="wrapper post">
     <div id="fileList">
         % contentType = fileInfo['type']
+        % print (contentType)
         % if contentType == 'Video' or contentType == 'Audio':
             <%
                 if contentType == 'Video' :
@@ -35,6 +36,15 @@
                     <img src="{{ url }}" style="border:1px solid black;"/>
                 </div>
             </div>
+        % elif contentType == '3D':
+           <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
+           <model-viewer
+                src="{{fileInfo['url']}}"
+                alt="{{ fileInfo['name'] }}"
+                auto-rotate
+                camera-controls
+                style="width: 400px; height: 400px;">
+            </model-viewer>
         % end 
         <br/>
         <h3>Details</h3>
@@ -112,6 +122,12 @@
                                 "id": fileInfo['url'],
                                 "type": "Text",
                                 "format": 'text/plain'
+                            }
+                        elif fileInfo['name'].endswith('.glb'):    
+                            infoJson = {
+                                "id": fileInfo['url'],
+                                "type": "Model",
+                                "format": "model/gltf-binary"
                             }
                         else:    
                             # straight image
