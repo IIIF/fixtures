@@ -50,7 +50,7 @@ def getFileInfo(filepath):
     elif 'Audio' in fileInfo:
         fileInfo['type'] = 'Audio'
     elif fileInfo['path'].startswith('/3d'):    
-        fileInfo['type'] = '3D'
+        fileInfo['type'] = 'Model'
     elif fileInfo['path'].startswith('/other'):    
         fileInfo['type'] = 'Other'
     else:

@@ -36,7 +36,7 @@
                     <img src="{{ url }}" style="border:1px solid black;"/>
                 </div>
             </div>
-        % elif contentType == '3D':
+        % elif contentType == 'Model':
            <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
            <model-viewer
                 src="{{fileInfo['url']}}"
@@ -155,6 +155,9 @@
                         infoJson['duration'] = fileInfo['General']['duration'] / 1000
                         infoJson['format'] = fileInfo['General']['internet_media_type']
                     end
+                    if contentType == 'Model':
+                        infoJson["format"] = "model/gltf-binary"
+                    end    
                 end
             %>
             <pre>
