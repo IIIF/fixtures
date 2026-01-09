@@ -1,10 +1,17 @@
 version: 0.2
 
+env:
+  secrets-manager:
+    DOCKERHUB_USER: "dockerhub/creds:username"
+    DOCKERHUB_TOKEN: "dockerhub/creds:token"
+
 phases:
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
       - aws --version
+      # Login to Docker Hub first (avoids rate limit)
+      - echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin
       - $(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)
       - IMAGE_NAME="fixtures"
       - REPOSITORY_URI=420715881449.dkr.ecr.us-east-1.amazonaws.com/fixtures
@@ -14,8 +21,7 @@ phases:
       - echo Build started on `date`
       - echo Building the Docker image...
       - echo Image_tag $IMAGE_TAG
-      - docker build -t $REPOSITORY_URI:latest .
-      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG 
+      - docker build --tag $REPOSITORY_URI:$IMAGE_TAG -f Dockerfile .
   post_build:
     commands:
       - echo Build completed on `date`
