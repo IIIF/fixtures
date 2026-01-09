@@ -1,5 +1,6 @@
 FROM srittau/wsgi-base:latest
 
+RUN apt-get update
 RUN apt-get -y install mediainfo
 WORKDIR /app/pylibs
 COPY requirements.txt ./
