@@ -2,12 +2,15 @@
 
 from .aws import AWS
 import json
+import sys
 from os import path
 import os
 from pymediainfo import MediaInfo
 from botocore.exceptions import ClientError
 import hashlib
 import urllib.request
+import tempfile
+import requests
 from urllib.error import HTTPError
 
 hostName = 'https://fixtures.iiif.io'
@@ -44,6 +47,9 @@ def getFileInfo(filepath):
                 simplifiedData[track['track_type']] = track
             fileInfo.update(simplifiedData)
 
+    print ("Fileinfo:")
+    print (json.dumps(fileInfo, indent=4))
+    print ("Path:")
     print (fileInfo['path'])
     if 'Video' in fileInfo:
         fileInfo['type'] = 'Video'
@@ -128,7 +134,7 @@ def processDir(s3client, directory, files, unittest=False, metadataCache=None):
                         leaf['metadata'][key] = metadata[fullpath]['metadata'][key]
                 if (directory.startswith('video/') or directory.startswith('audio/')) and ('metadata' not in leaf or 'mediainfo' not in leaf['metadata']):
                     print ('Media info not found so adding')
-                    fileJson = json.loads(MediaInfo.parse('{}/{}'.format(hostName,fullpath)).to_json())
+                    fileJson = process_local(f"{hostName}/{fullpath}")
                     leaf['metadata'] = { 'mediainfo': fileJson }
 
                     if fullpath not in metadata:
@@ -140,6 +146,9 @@ def processDir(s3client, directory, files, unittest=False, metadataCache=None):
                     metadataChange=True
                 
             except OSError as configError:
+                print('Failed to analysis file due to a problem with the setup of mediainfo:')
+                print(configError)
+            except RuntimeError as configError:
                 print('Failed to analysis file due to a problem with the setup of mediainfo:')
                 print(configError)
     if not unittest and metadataChange:
@@ -158,6 +167,17 @@ def recursiveMergeDicts(sourceDict, newDict):
         else:
             recursiveMergeDicts(sourceDict[key], newDict[key])
 
+def process_local(url):
+    with requests.get(url, stream=True, timeout=60) as r:
+        r.raise_for_status()
+        with tempfile.NamedTemporaryFile(suffix=os.path.splitext(url)[1]) as tmp:
+            for chunk in r.iter_content(chunk_size=1024 * 1024):
+                if chunk:
+                    tmp.write(chunk)
+            tmp.flush()
+
+            mi = MediaInfo.parse(tmp.name)
+            return json.loads(mi.to_json())
 
 def generateFilelist():
     s3client = AWS().s3()
@@ -181,3 +201,5 @@ def generateFilelist():
             
     return metadata
         
+if __name__ == "__main__":
+    print (json.dumps(json.loads(MediaInfo.parse(sys.argv[1]).to_json()), indent=4))
