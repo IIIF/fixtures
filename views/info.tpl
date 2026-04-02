@@ -36,7 +36,7 @@
                     <img src="{{ url }}" style="border:1px solid black;"/>
                 </div>
             </div>
-        % elif contentType == 'Model':
+        % elif contentType == 'Model' and fileInfo['name'].endswith('.glb'):
            <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
            <model-viewer
                 src="{{fileInfo['url']}}"
@@ -155,8 +155,15 @@
                         infoJson['duration'] = fileInfo['General']['duration'] / 1000
                         infoJson['format'] = fileInfo['General']['internet_media_type']
                     end
-                    if contentType == 'Model':
+                    if contentType == 'Model' and fileInfo['name'].endswith('.glb'):
                         infoJson["format"] = "model/gltf-binary"
+                    else:
+                        if fileInfo['name'].endswith('.png'):
+                            infoJson["format"] = "image/png"
+                        end    
+                        if fileInfo['name'].endswith('.hdr'):
+                            infoJson["format"] = "image/vnd.radiance"
+                        end    
                     end    
                 end
             %>
