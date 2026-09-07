@@ -1,6 +1,7 @@
 #!`which python3`
 
 from .aws import AWS
+from . import hls
 import json
 import sys
 from os import path
@@ -51,7 +52,7 @@ def getFileInfo(filepath):
     print (json.dumps(fileInfo, indent=4))
     print ("Path:")
     print (fileInfo['path'])
-    if 'Video' in fileInfo:
+    if 'Video' in fileInfo or fileInfo['name'].endswith("m3u8"):
         fileInfo['type'] = 'Video'
     elif 'Audio' in fileInfo:
         fileInfo['type'] = 'Audio'
@@ -111,12 +112,14 @@ def processDir(s3client, directory, files, unittest=False, metadataCache=None):
         metadata = metadataCache
     else:    
         metadata = getMetadataFile(s3client, directory)
+
     metadataChange=False
     filesystem = {}
     for filename in files:
         s3fileinfo = files[filename]    
         fullpath = "{}/{}".format(directory, filename)
-        if not filename.endswith('metadata.json'):
+        if not filename.endswith('metadata.json') and not filename.endswith('.ts'):
+            print (f"Processing: {filename}")
             path = fullpath.split('/')
             dirEl = filesystem
             leaf = {}
@@ -130,11 +133,16 @@ def processDir(s3client, directory, files, unittest=False, metadataCache=None):
             try: 
                 if fullpath in metadata and 'metadata' in metadata[fullpath]:
                     leaf['metadata'] = {}
-                    for key in  metadata[fullpath]['metadata']:
+                    for key in metadata[fullpath]['metadata']:
                         leaf['metadata'][key] = metadata[fullpath]['metadata'][key]
+
                 if (directory.startswith('video/') or directory.startswith('audio/')) and ('metadata' not in leaf or 'mediainfo' not in leaf['metadata']):
-                    print ('Media info not found so adding')
-                    fileJson = process_local(f"{hostName}/{fullpath}")
+                    if filename.endswith("m3u8"):
+                        print ('Adding HLS info')
+                        fileJson = hls.process(hostName, fullpath)
+                    else:    
+                        print ('Media info not found so adding')
+                        fileJson = process_local(f"{hostName}/{fullpath}")
                     leaf['metadata'] = { 'mediainfo': fileJson }
 
                     if fullpath not in metadata:
@@ -151,6 +159,7 @@ def processDir(s3client, directory, files, unittest=False, metadataCache=None):
             except RuntimeError as configError:
                 print('Failed to analysis file due to a problem with the setup of mediainfo:')
                 print(configError)
+
     if not unittest and metadataChange:
         # save metadata to s3 
         saveMetadata(directory, metadata)
