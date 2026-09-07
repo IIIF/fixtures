@@ -9,7 +9,7 @@
 <div class="wrapper post">
     <div id="fileList">
         % contentType = fileInfo['type']
-        % print (contentType)
+        % print (f"Content type: {contentType}")
         % if contentType == 'Video' or contentType == 'Audio':
             <%
                 if contentType == 'Video' :
@@ -18,11 +18,23 @@
                     contentType = 'Audio'
                     size = ''
                 end
+                if 'internet_media_type' in fileInfo['General']:
+                    mediatype = fileInfo['General']['internet_media_type']
+                elif 'format' in fileInfo['General']:    
+                    if "HLS" == fileInfo['General']['format']:
+                        mediatype = "application/vnd.apple.mpegurl"
+                        fileInfo['General']['internet_media_type'] = mediatype
+                    else:
+                        mediatype= fileInfo['General']['format']
+                    end    
+                else:
+                    mediatype = "application/octet-stream"   
+                end         
             %>
             
             <div width="100%" align="center">
                 <video {{ size }} controls style="border:1px solid black;">
-                    <source src="{{fileInfo['url']}}" type="{{ fileInfo['General']['internet_media_type'] }}">
+                    <source src="{{fileInfo['url']}}" type="{{ mediatype }}">
                     Your browser does not support the video tag.
                 </video>
             </div>
@@ -75,14 +87,35 @@
                     <td><b>Type: </b></td><td>{{ fileInfo['General']['format'] }} ({{ fileInfo['General']['internet_media_type']}})</a></td>
                 </tr>    
                 <tr>
-                    <td><b>Duration: </b></td><td>{{ fileInfo['General']['duration'] / 1000 }} seconds</a></td>
+                    <td><b>Duration: </b></td>
+                        <td>
+                        % if 'duration' in fileInfo['General']:
+                            {{ fileInfo['General']['duration'] / 1000 }} seconds
+                        % else:
+                            UNKNOWN
+                        % end
+                        </td>
                 </tr>
                 % if contentType == 'Video':
                     <tr>
-                        <td><b>Width: </b></td><td>{{ fileInfo['Video']['width'] }} </a></td>
+                        <td><b>Width: </b></td>
+                        <td>
+                        % if 'Video' in fileInfo and 'width' in fileInfo['Video']:
+                            {{ fileInfo['Video']['width'] }}
+                        % else:
+                            UNKNOWN
+                        % end
+                        </td>
                     </tr>
                     <tr>
-                        <td><b>Height: </b></td><td>{{ fileInfo['Video']['height'] }}</a></td>
+                        <td><b>Height: </b></td>
+                        <td>
+                        % if 'Video' in fileInfo and 'height' in fileInfo['Video']:
+                            {{ fileInfo['Video']['height'] }}
+                        % else:
+                            UNKNOWN
+                        % end
+                        </td>
                     </tr>
                 % end    
             % end    
@@ -148,11 +181,15 @@
                     }
 
                     if contentType == 'Video':
-                        infoJson['height'] = fileInfo['Video']['height']
-                        infoJson['width'] = fileInfo['Video']['width']
+                        if 'Video' in fileInfo:
+                            infoJson['height'] = fileInfo['Video']['height']
+                            infoJson['width'] = fileInfo['Video']['width']
+                        end     
                     end    
                     if 'General' in fileInfo:
-                        infoJson['duration'] = fileInfo['General']['duration'] / 1000
+                        if 'duration' in fileInfo['General']:
+                            infoJson['duration'] = fileInfo['General']['duration'] / 1000
+                        end
                         infoJson['format'] = fileInfo['General']['internet_media_type']
                     end
                     if contentType == 'Model' and fileInfo['name'].endswith('.glb'):
